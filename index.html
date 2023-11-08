@@ -1,40 +1,190 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<link rel="stylesheet" href="dist/reset.css">
-		<link rel="stylesheet" href="dist/reveal.css">
-		<link rel="stylesheet" href="dist/theme/black.css">
+	<title>Kafka-Mini Einführung</title>
 
-		<!-- Theme used for syntax highlighted code -->
-		<link rel="stylesheet" href="plugin/highlight/monokai.css">
-	</head>
-	<body>
-		<div class="reveal">
-			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
-			</div>
+	<link rel="stylesheet" href="dist/reset.css">
+	<link rel="stylesheet" href="dist/reveal.css">
+	<link rel="stylesheet" href="dist/theme/black.css">
+
+	<!-- Theme used for syntax highlighted code -->
+	<link rel="stylesheet" href="plugin/highlight/monokai.css">
+</head>
+
+<body>
+	<div class="reveal">
+		<div class="slides">
+			<section>
+				<h2>Inhalt Kafka-Mini</h2>
+				<ul>
+					<li>Event</li>
+					<li>Kafka Server / Broker</li>
+					<li>Topics</li>
+					<li>Partitions</li>
+					<li>Ökosystem</li>
+					<li>Message Semantics</li>
+					<li>Demo-Code (Low-Level + Kafka Streams)</li>
+					<li>Weiterführende Infos</li>
+				</ul>
+			</section>
+			<section>
+				<section>
+					<h2>Event</h2>
+					<blockquote>Apache Kafka is an open-source <b style="color:red;">distributed event streaming platform</b> used
+						by thousands of companies for high-performance data pipelines, streaming analytics, data integration, and
+						mission-critical applications.</blockquote>
+					<p>Aber was ist ein Event?</p>
+				</section>
+				<section>
+					<h3>Definition eines Events</h3>
+					<p>Ein Event in Kafka ist "irgendetwas", was einen Schlüssel und einen Wert hat und unveränderbar ist
+						(Vergangenheit!).</p>
+					<ul>
+						<li>Temparatur-Messung eines Hardware-Gerätes</li>
+						<li>Business Change Event</li>
+						<li>Datenbank-&Auml;nderung (CDC)</li>
+					</ul>
+				</section>
+			</section>
+			<section>
+				<h2>Kafka Server / Broker</h2>
+				<p>It's just a black box...</p>
+			</section>
+			<section>
+				<h2>Topics</h2>
+				<ul>
+					<li>Topics sind eine pur organisatorische Eineit: Die gleichen Events sollten in dasselbe Topic.</li>
+					<li>Log-Semantik:<ul>
+							<li>neue Einträge werden ans Ende angehängt</li>
+							<li>Einträge können nicht gelöscht werden</li>
+						</ul>
+					</li>
+					<li>Im Gegensatz zu Queues: Normalerweise langlebig.</li>
+					<li>Sie werden immer (auf die Disk) persistiert.</li>
+				</ul>
+			</section>
+			<section>
+				<section>
+					<h2>Partition (1)</h2>
+					<p>Bricht das Topic (log) in kleinere Einheiten <br />(ebenfalls Logs).</p>
+					<p>Sorgt für Skalierbarkeit, weil die Partitionen auf mehreren Nodes laufen können.</p>
+				</section>
+				<section>
+					<h2>Partition (2)</h2>
+					<p>Reihenfolgen-Garantie: innerhalb einer Partition ist die Reihenfolge immer garantiert!</p>
+				</section>
+				<section>
+					<h2>Partition (3)</h2>
+					<p>Der Producer definiert, welches Event auf welcher Partition landet!</p>
+				</section>
+				<section>
+					<h2>Producer Entscheidungsverhalten</h2>
+					<img src="assets/producer-record-verhalten.png" class="r-stretch" />
+				</section>
+				<section>
+					<h2>Parallelität</h2>
+					<img src="assets/partition-topic-consumer.png" class="r-stretch" />
+				</section>
+				<section>
+					<h2>Anzahl Partitionen</h2>
+					<ul>
+						<li>Am Anfang lieber zu gross als zu klein</li>
+						<li>Eine Änderung bricht die Reihenfolgen-Garantie</li>
+					</ul>
+				</section>
+			</section>
+			<section>
+				<h2>Ökosystem</h2>
+				<img src="assets/kafka-ecosystem.png" class="r-stretch" />
+			</section>
+			<section>
+				<section>
+					<h2>At most once</h2>
+					<dl>
+						<dt>Producer</dt>
+						<dd>Möglich, häufig Fehlkonfiguration</dd>
+
+						<dt>Consumer</dt>
+						<dd>Vermutlich ein Fehler, aber möglich</dd>
+
+						<dt>Kafka-Streams</dt>
+						<dd>Möglich</dd>
+
+						<dt>Kafka-Connect</dt>
+						<dd>Möglich, aber noch nie gesehen</dd>
+					</dl>
+				</section>
+				<section>
+					<h2>At least once</h2>
+					<dl>
+						<dt>Producer</dt>
+						<dd>Standard-Verhalten</dd>
+
+						<dt>Consumer</dt>
+						<dd>Standard-Verhalten</dd>
+
+						<dt>Kafka-Streams</dt>
+						<dd>Default</dd>
+
+						<dt>Kafka-Connect</dt>
+						<dd>Je nach Source/Sink Default</dd>
+					</dl>
+				</section>
+				<section>
+					<h2>Exactly once</h2>
+					<p>Häufig gewünscht, aber meistens teuer</p>
+					<dl>
+						<dt>Producer</dt>
+						<dd>Transaktionalität aktivieren, mehrere Topics</dd>
+
+						<dt>Consumer</dt>
+						<dd>Transaktionalität + Isolation Level</dd>
+
+						<dt>Kafka-Streams</dt>
+						<dd>Problemlos möglich (ausser externe Sourcen)</dd>
+
+						<dt>Kafka-Connect</dt>
+						<dd>Wenn Source/Sink transaktional sind</dd>
+					</dl>
+				</section>
+			</section>
+			<section>Demo-Code (Low-Level + Kafka Streams)</section>
+			<section>
+				<h2>Weiterführende Links</h2>
+				<ul>
+					<li><a href="https://developer.confluent.io" target="_blank">Confluent (mit Abstand das Beste)</a></li>
+					<li><a href="https://kafka.apache.org/" target="_blank">Apache Kafka</a></li>
+					<li><a href="https://avro.apache.org/" target="_blank">Avro</a></li>
+					<li><a href="https://confluence.css.ch/confluence/display/SYST/Kafka+Entwickler" target="_blank">CSS</a></li>
+					<li><a href="https://github.com/titaniumcoder/kafka-demo-code">Demo-Code Source</a></li>
+				</ul>
+			</section>
 		</div>
+	</div>
 
-		<script src="dist/reveal.js"></script>
-		<script src="plugin/notes/notes.js"></script>
-		<script src="plugin/markdown/markdown.js"></script>
-		<script src="plugin/highlight/highlight.js"></script>
-		<script>
-			// More info about initialization & config:
-			// - https://revealjs.com/initialization/
-			// - https://revealjs.com/config/
-			Reveal.initialize({
-				hash: true,
+	<script src="dist/reveal.js"></script>
+	<script src="plugin/notes/notes.js"></script>
+	<script src="plugin/markdown/markdown.js"></script>
+	<script src="plugin/highlight/highlight.js"></script>
+	<script>
+		// More info about initialization & config:
+		// - https://revealjs.com/initialization/
+		// - https://revealjs.com/config/
+		Reveal.initialize({
+			hash: true,
+			slideNumber: true,
+			progress: true,
+			controlsTutorial: false,
+			pdfSeparateFragments: false,
 
-				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
-			});
-		</script>
-	</body>
+			// Learn about plugins: https://revealjs.com/plugins/
+			plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
+		});
+	</script>
+</body>
+
 </html>
